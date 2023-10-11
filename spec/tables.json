@@ -1,0 +1,113 @@
+[
+  {
+    "name": "books",
+    "refer": "books",
+    "columns": [
+      "id int primary key",
+      "title text not null",
+      "length int check length > 0 not null",
+      "edition int",
+      "release_dt datetime not null",
+      "isbn int unique not null"
+    ]
+  },
+  {
+    "name": "books_authors",
+    "refer": "books.authors",
+    "columns": ["book_id int primary key", "contributor_id int primary key"]
+  },
+  {
+    "name": "books_editors",
+    "refer": "books.editors",
+    "columns": ["book_id int primary key", "contributor_id int primary key"]
+  },
+  {
+    "name": "books_publishers",
+    "refer": "books.publishers",
+    "columns": ["book_id int primary key", "contributor_id int primary key"]
+  },
+  {
+    "name": "books_genres",
+    "refer": "books.genres",
+    "columns": ["book_id int primary key", "genre_id int primary key"]
+  },
+  {
+    "name": "books_audiences",
+    "refer": "books.audiences",
+    "columns": ["book_id int primary key", "audience_id int primary key"]
+  },
+  {
+    "name": "books_collections",
+    "refer": "books.collections",
+    "columns": ["book_id int primary key", "collection_id int primary key"]
+  },
+  {
+    "name": "contributors",
+    "refer": "contributors",
+    "columns": [
+      "id int primary key",
+      "name_first varchar(25) not null",
+      "name_last_company varchar(50) not null"
+    ]
+  },
+  {
+    "name": "genres",
+    "refer": "genres",
+    "columns": ["id int primary key", "name varchar(25) not null"]
+  },
+  {
+    "name": "audiences",
+    "refer": "audences",
+    "columns": ["id int primary key", "name varchar(25) not null"]
+  },
+  {
+    "name": "users",
+    "refer": "users",
+    "columns": [
+      "id int primary key",
+      "creation_dt datetime not null",
+      "access_dt datetime not null",
+      "name_first varchar(25) not null",
+      "name_last varchar(25) not null",
+      "email varchar(50) not null",
+      "password varchar(50) not null"
+    ]
+  },
+  {
+    "name": "users_ratings",
+    "refer": "users.ratings",
+    "columns": [
+      "book_id int primary key",
+      "user_id int primary key",
+      "rating int not null check rating >= 0 check rating <= 5"
+    ]
+  },
+  {
+    "name": "users_sessions",
+    "refer": "users.sessions",
+    "columns": [
+      "session_id int primary key",
+      "book_id int primary key",
+      "user_id int primary key",
+      "start_datetime datetime not null",
+      "end_datetime datetime not null check end_datetime > start_datetime",
+      "start_page int not null",
+      "end_page int not null check end_page > start_page"
+    ]
+  },
+  {
+    "name": "users_collections",
+    "refer": "users.collections",
+    "columns": ["user_id int primary key", "collection_id int primary key"]
+  },
+  {
+    "name": "users_following",
+    "refer": "users.following",
+    "columns": ["user_id int primary key", "following_id int primary key"]
+  },
+  {
+    "name": "collections",
+    "refer": "collections",
+    "columns": ["id int primary key", "name varchar(50) not null"]
+  }
+]
