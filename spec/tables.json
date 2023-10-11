@@ -3,111 +3,127 @@
     "name": "books",
     "refer": "books",
     "columns": [
-      "id int primary key",
+      "id integer",
       "title text not null",
-      "length int check length > 0 not null",
+      "length integer check (length > 0) not null",
       "edition int",
       "release_dt datetime not null",
-      "isbn int unique not null"
-    ]
+      "isbn integer unique not null"
+    ],
+    "primary": ["id"]
   },
   {
     "name": "books_authors",
     "refer": "books.authors",
-    "columns": ["book_id int primary key", "contributor_id int primary key"]
+    "columns": ["book_id integer", "contributor_id integer"],
+    "primary": ["book_id", "contributor_id"]
   },
   {
     "name": "books_editors",
     "refer": "books.editors",
-    "columns": ["book_id int primary key", "contributor_id int primary key"]
+    "columns": ["book_id integer", "contributor_id integer"],
+    "primary": ["book_id", "contributor_id"]
   },
   {
     "name": "books_publishers",
     "refer": "books.publishers",
-    "columns": ["book_id int primary key", "contributor_id int primary key"]
+    "columns": ["book_id integer", "contributor_id integer"],
+    "primary": ["book_id", "contributor_id"]
   },
   {
     "name": "books_genres",
     "refer": "books.genres",
-    "columns": ["book_id int primary key", "genre_id int primary key"]
+    "columns": ["book_id integer", "genre_id integer"],
+    "primary": ["book_id", "genre_id"]
   },
   {
     "name": "books_audiences",
     "refer": "books.audiences",
-    "columns": ["book_id int primary key", "audience_id int primary key"]
+    "columns": ["book_id integer", "audience_id integer"],
+    "primary": ["book_id", "audience_id"]
   },
   {
     "name": "books_collections",
     "refer": "books.collections",
-    "columns": ["book_id int primary key", "collection_id int primary key"]
+    "columns": ["book_id integer", "collection_id integer"],
+    "primary": ["book_id", "collection_id"]
   },
   {
     "name": "contributors",
     "refer": "contributors",
     "columns": [
-      "id int primary key",
+      "id integer",
       "name_first varchar(25) not null",
       "name_last_company varchar(50) not null"
-    ]
+    ],
+    "primary": ["id"]
   },
   {
     "name": "genres",
     "refer": "genres",
-    "columns": ["id int primary key", "name varchar(25) not null"]
+    "columns": ["id integer", "name varchar(25) not null"],
+    "primary": ["id"]
   },
   {
     "name": "audiences",
     "refer": "audences",
-    "columns": ["id int primary key", "name varchar(25) not null"]
+    "columns": ["id integer", "name varchar(25) not null"],
+    "primary": ["id"]
   },
   {
     "name": "users",
     "refer": "users",
     "columns": [
-      "id int primary key",
+      "id integer",
       "creation_dt datetime not null",
       "access_dt datetime not null",
       "name_first varchar(25) not null",
       "name_last varchar(25) not null",
       "email varchar(50) not null",
       "password varchar(50) not null"
-    ]
+    ],
+    "primary": ["id"]
   },
   {
     "name": "users_ratings",
     "refer": "users.ratings",
     "columns": [
-      "book_id int primary key",
-      "user_id int primary key",
-      "rating int not null check rating >= 0 check rating <= 5"
-    ]
+      "book_id integer",
+      "user_id integer",
+      "rating integer not null check (rating >= 0) check (rating <= 5)"
+    ],
+    "primary": ["book_id", "user_id"]
   },
   {
     "name": "users_sessions",
     "refer": "users.sessions",
     "columns": [
-      "session_id int primary key",
-      "book_id int primary key",
-      "user_id int primary key",
+      "session_id integer",
+      "book_id integer",
+      "user_id integer",
       "start_datetime datetime not null",
-      "end_datetime datetime not null check end_datetime > start_datetime",
-      "start_page int not null",
-      "end_page int not null check end_page > start_page"
-    ]
+      "end_datetime datetime not null check (end_datetime > start_datetime)",
+      "start_page integer not null",
+      "end_page integer not null check (end_page > start_page)"
+    ],
+    "primary": ["session_id", "book_id", "user_id"]
   },
   {
     "name": "users_collections",
     "refer": "users.collections",
-    "columns": ["user_id int primary key", "collection_id int primary key"]
+    "columns": ["user_id integer", "collection_id integer"],
+    "primary": ["user_id", "collection_id"]
   },
   {
     "name": "users_following",
     "refer": "users.following",
-    "columns": ["user_id int primary key", "following_id int primary key"]
+    "columns": ["user_id integer", "following_id integer"],
+    "primary": ["user_id", "following_id"]
   },
   {
     "name": "collections",
     "refer": "collections",
-    "columns": ["id int primary key", "name varchar(50) not null"]
+    "columns": ["id integer", "name varchar(50) not null"],
+    "primary": ["id"]
   }
 ]

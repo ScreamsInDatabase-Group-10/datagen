@@ -34,7 +34,7 @@ NAMES_DICT = spec/names.dic # Dictionary file for markov chain
 # Supplemental Data
 WORDS_DICT = spec/words.dic # Dictionary file for markov chain
 MAX_RATINGS = 100 # Max number of ratings that any book may have
-MAX_COLLECTIONS = 5 # Max collections per user
+MAX_COLLECTIONS = 10 # Max collections per user
 MAX_COLLECTION_SIZE = 50 # Max books per collection
 MAX_COLLECTION_NAME = 50 # Max length of collection name
 MAX_SESSIONS = 50 # Max sessions/user
@@ -55,7 +55,8 @@ Tables to generate are specified in a JSON document with the following structure
     "columns": [ // Column specifiers
       "<name> <type> <constraints...>",
       ...
-    ]
+    ],
+    "primary": ["id", ...] // List of primary key columns
   },
     },
     ...
