@@ -24,14 +24,10 @@ def tables_main(context: GeneratorContext):
 def create_table(context: GeneratorContext, table: TableSpec):
     if context.options["db_clear"]:
         remove_table(context, table["name"])
-    print("CREATE TABLE {name} ({columns}, PRIMARY KEY ({primary}))".format(
+    context.db.execute("CREATE TABLE {name} ({columns})".format(
         name=table["name"],
         columns=", ".join(table["columns"]),
         primary=", ".join(table["primary"])
-    ))
-    context.db.execute("CREATE TABLE {name} ({columns})".format(
-        name=table["name"],
-        columns=", ".join(table["columns"])
     ))
 
 def remove_table(context: GeneratorContext, table: str):
