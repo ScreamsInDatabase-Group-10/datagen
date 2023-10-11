@@ -54,6 +54,7 @@ class GeneratorContext:
             "max_following": int(getenv("MAX_FOLLOWING", "100"))
         }
         self.db = self._open_database()
+        self.ids: dict[str, int] = {}
 
     def _open_database(self) -> Connection:
         return connect(self.options["db_file"])
@@ -61,3 +62,10 @@ class GeneratorContext:
     def cleanup(self):
         self.db.commit()
         self.db.close()
+
+    def id(self, entity: str) -> int:
+        if not entity in self.ids.keys():
+            self.ids[entity] = 0
+            return 0
+        self.ids[entity] += 1
+        return self.ids[entity]
