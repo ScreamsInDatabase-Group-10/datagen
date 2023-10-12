@@ -51,15 +51,20 @@ class GeneratorContext:
             "max_collection_size": int(getenv("MAX_COLLECTION_SIZE", "50")),
             "max_sessions": int(getenv("MAX_SESSIONS", "50")),
             "max_session_time": int(getenv("MAX_SESSION_TIME", "10")),
-            "max_following": int(getenv("MAX_FOLLOWING", "100"))
+            "max_following": int(getenv("MAX_FOLLOWING", "100")),
         }
         self.db = self._open_database()
         self.ids: dict[str, int] = {}
 
     def _open_database(self) -> Connection:
-        return connect(self.options["db_file"])
-    
+        conn = connect(self.options["db_file"])
+        conn.execute(
+            "CREATE TABLE staging_id_mapping (original varchar(100) not null, mapped int not null, primary key (original, mapped));"
+        )
+        return conn
+
     def cleanup(self):
+        self.db.execute("DROP TABLE staging_id;")
         self.db.commit()
         self.db.close()
 
@@ -69,3 +74,12 @@ class GeneratorContext:
             return 0
         self.ids[entity] += 1
         return self.ids[entity]
+
+    def create_mapped(self, entity_type: str, original_id: str) -> int:
+        mapped = self.id(entity_type)
+        self.db.execute(
+            "INSERT INTO staging_id_mapping (original, mapped) VALUES ('{original}', {mapped})".format(
+                original=original_id, mapped=mapped
+            )
+        )
+        return mapped
