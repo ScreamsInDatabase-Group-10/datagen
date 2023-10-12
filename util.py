@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from os import getenv, environ
 from typing_extensions import TypedDict
-from typing import Union
+from typing import Union, Literal
 from sqlite3 import Connection, connect
 
 
@@ -25,6 +25,25 @@ class OptionsDict(TypedDict):
     max_session_time: int
     max_following: int
 
+
+REFERENCE_NAMES = Literal[
+    "books", 
+    "books.authors", 
+    "books.editors", 
+    "books.publishers", 
+    "books.genres", 
+    "books.audiences", 
+    "books.collections", 
+    "contributors",
+    "genres",
+    "audiences",
+    "users",
+    "users.ratings",
+    "users.sessions",
+    "users.collections",
+    "users.following",
+    "collections"
+]
 
 class GeneratorContext:
     def __init__(self):
@@ -77,11 +96,12 @@ class GeneratorContext:
         self.ids[entity] += 1
         return self.ids[entity]
 
-    def create_mapped(self, entity_type: str, original_id: str) -> int:
-        mapped = self.id(entity_type)
+    def create_mapped(self, entity_type: str, original_id: str, mapped_id: int):
         self.db.execute(
             "INSERT INTO staging_id_mapping (original, mapped) VALUES ('{original}', {mapped})".format(
-                original=original_id, mapped=mapped
+                original=original_id, mapped=mapped_id
             )
         )
-        return mapped
+        
+    def table(self, ref: REFERENCE_NAMES) -> str:
+        return self.tables[ref]

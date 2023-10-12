@@ -4,14 +4,57 @@ from rich import print
 from rich.status import Status
 from rich.console import Console
 import json
+import os
+from typing_extensions import TypedDict
+import string
+import dateutil.parser
+
+EDITION_REQUIRED_KEYS = [
+    "revision",
+    "title",
+    "number_of_pages",
+    "publish_date",
+    "publishers",
+    "authors",
+    "genres",
+    "subjects",
+    "isbn_13",
+]
+AUTHOR_REQUIRED_KEYS = ["name"]
+
+
+class TrimmedEdition(TypedDict):
+    revision: int
+    title: str
+    number_of_pages: int
+    publish_date: str
+    publishers: list[str]
+    authors: list[dict[str, str]]
+    genres: list[str]
+    subjects: list[str]
+    isbn_10: list[str]
+
+
+class TrimmedAuthor(TypedDict):
+    name: str
+
 
 def dl_string(context: GeneratorContext, count: int) -> str:
     return "Downloading {count}{suffix}...".format(
         count=str(count),
-        suffix=(" / " + str(context.options["data_limit"])) if context.options["data_limit"] else ""
+        suffix=(" / " + str(context.options["data_limit"]))
+        if context.options["data_limit"]
+        else "",
     )
 
+
 def download_books_main(context: GeneratorContext):
+    if os.path.exists("authors.out"):
+        os.remove("authors.out")
+
+    if os.path.exists("editions.out"):
+        os.remove("editions.out")
+
     print("[green][bold]STEP: [/bold] Downloading books...[/green]")
     data_stream = requests.get(context.options["data_url"], stream=True)
 
@@ -22,10 +65,106 @@ def download_books_main(context: GeneratorContext):
         count = 0
         for line in data_stream.iter_lines(decode_unicode=True):
             status.update(dl_string(context, count + 1))
-            process_line(context, line, status.console)
-            count += 1
+            if process_line(context, line, status.console):
+                count += 1
             if context.options["data_limit"] and count > context.options["data_limit"]:
                 break
+
+
+def store_author(id: str, data: dict, context: GeneratorContext, console: Console) -> bool:
+    with open("authors.out", "a") as f:
+        f.write(json.dumps(data) + "\n")
+
+    if not all([k in data.keys() for k in AUTHOR_REQUIRED_KEYS]):
+        return False
+
+    trimmed: TrimmedAuthor = {
+        k: v for k, v in data.items() if k in AUTHOR_REQUIRED_KEYS
+    }
+
+    if len(trimmed["name"].split(" ")) < 2:
+        return False
+
+    mapped_id = context.id("authors")
+    try:
+        context.db.execute(
+            "INSERT INTO " + context.table("contributors") + " (id, name_first, name_last_company) VALUES (:id, :first_name, :last_name)", dict(
+                id=mapped_id,
+                first_name=trimmed["name"].split(" ")[0].replace("'", "\\'"),
+                last_name=trimmed["name"].split(" ")[-1].replace("'", "\\'"),
+            )
+        )
+        context.db.commit()
+        context.create_mapped("authors", id, mapped_id)
+    except:
+        console.print(
+            "[red][bold]Insertion Error:[/bold] {data}[/red]".format(
+                data=trimmed
+            )
+        )
+        return False
+
+    return True
+
+
+def store_edition(
+    id: str, data: dict, context: GeneratorContext, console: Console
+) -> bool:
+    with open("editions.out", "a") as f:
+        f.write(json.dumps(data) + "\n")
+
+    if not all([k in data.keys() for k in EDITION_REQUIRED_KEYS]):
+        return False
+
+    trimmed: TrimmedEdition = {
+        k: v for k, v in data.items() if k in EDITION_REQUIRED_KEYS
+    }
+
+    if len(trimmed["authors"]) == 0:
+        return False
+
+    if len(trimmed["publishers"]) == 0:
+        return False
+
+    if len(trimmed["isbn_13"]) == 0:
+        return False
+
+    if any([not i in string.digits for i in trimmed["isbn_13"][0]]):
+        return False
+
+    try:
+        parsed_dt = int(dateutil.parser.parse(trimmed["publish_date"]).timestamp())
+    except:
+        console.print(
+            "[red][bold]Parse Error:[/bold] Parsing date string {dstring}[/red]".format(
+                dstring=trimmed["publish_date"]
+            )
+        )
+        return False
+
+    mapped_id = context.id("editions")
+    try:
+        context.db.execute(
+            "INSERT INTO " + context.table("books") + " (id, title, length, edition, release_dt, isbn) VALUES (:id, :title, :length, :edition, :release_dt, :isbn)", dict(
+                id=mapped_id,
+                title=trimmed["title"].replace("'", "\\'"),
+                length=trimmed["number_of_pages"],
+                edition=trimmed["revision"],
+                release_dt=parsed_dt,
+                isbn=int(trimmed["isbn_13"][0]),
+            )
+        )
+        context.db.commit()
+        context.create_mapped("editions", id, mapped_id)
+    except:
+        console.print(
+            "[red][bold]Insertion Error:[/bold] {data}[/red]".format(
+                data=trimmed
+            )
+        )
+        return False
+    return True
+
 
 def process_line(context: GeneratorContext, line: str, console: Console) -> bool:
     parts = line.split("\t")
@@ -34,8 +173,8 @@ def process_line(context: GeneratorContext, line: str, console: Console) -> bool
     record_data = json.loads(parts[4])
 
     if record_type == "/type/author":
-        pass
+        return store_author(record_id, record_data, context, console)
     if record_type == "/type/edition":
-        pass
+        return store_edition(record_id, record_data, context, console)
 
-    return False    
+    return False
