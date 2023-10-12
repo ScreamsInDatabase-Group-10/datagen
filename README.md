@@ -7,11 +7,12 @@ Configure using a `.env` file with the following values specified:
 
 ```bash
 # Steps (order doesn't matter)
+# - staging : Build & Destroy ID staging table
 # - tables : Build tables & setup DB
 # - download_books : Get book/contrib data and feed into tables
 # - make_users : Generate users (without any linking)
 # - supplemental : Link users to entities, generate ratings, generate follows, generate sessions, etc
-STEPS = tables download_books make_users supplemental
+STEPS = staging tables download_books make_users supplemental
 
 # Database Options (currently with sqlite)
 

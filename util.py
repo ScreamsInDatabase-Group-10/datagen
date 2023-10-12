@@ -77,15 +77,17 @@ class GeneratorContext:
 
     def _open_database(self) -> Connection:
         conn = connect(self.options["db_file"])
-        conn.execute("DROP TABLE IF EXISTS staging_id_mapping;")
-        conn.execute(
-            "CREATE TABLE staging_id_mapping (original varchar(100) not null, mapped int not null, primary key (original, mapped));"
-        )
-        conn.commit()
+        if "staging" in self.options["steps"]:
+            conn.execute("DROP TABLE IF EXISTS staging_id_mapping;")
+            conn.execute(
+                "CREATE TABLE staging_id_mapping (original varchar(100) not null, mapped int not null, primary key (original, mapped));"
+            )
+            conn.commit()
         return conn
 
     def cleanup(self):
-        self.db.execute("DROP TABLE staging_id_mapping;")
+        if "staging" in self.options["steps"]:
+            self.db.execute("DROP TABLE staging_id_mapping;")
         self.db.commit()
         self.db.close()
 
@@ -97,11 +99,13 @@ class GeneratorContext:
         return self.ids[entity]
 
     def create_mapped(self, entity_type: str, original_id: str, mapped_id: int):
+        if not "staging" in self.options["steps"]:
+            return
         self.db.execute(
             "INSERT INTO staging_id_mapping (original, mapped) VALUES ('{original}', {mapped})".format(
                 original=original_id, mapped=mapped_id
             )
         )
-        
+
     def table(self, ref: REFERENCE_NAMES) -> str:
         return self.tables[ref]

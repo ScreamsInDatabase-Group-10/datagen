@@ -65,13 +65,20 @@ def download_books_main(context: GeneratorContext):
         count = 0
         for line in data_stream.iter_lines(decode_unicode=True):
             status.update(dl_string(context, count + 1))
-            if process_line(context, line, status.console):
-                count += 1
+            try:
+                if process_line(context, line, status.console):
+                    count += 1
+            except:
+                status.console.print(
+                    "[red][bold]Line Error:[/bold] {data}[/red]".format(data=line)
+                )
             if context.options["data_limit"] and count > context.options["data_limit"]:
                 break
 
 
-def store_author(id: str, data: dict, context: GeneratorContext, console: Console) -> bool:
+def store_author(
+    id: str, data: dict, context: GeneratorContext, console: Console
+) -> bool:
     with open("authors.out", "a") as f:
         f.write(json.dumps(data) + "\n")
 
@@ -88,19 +95,20 @@ def store_author(id: str, data: dict, context: GeneratorContext, console: Consol
     mapped_id = context.id("authors")
     try:
         context.db.execute(
-            "INSERT INTO " + context.table("contributors") + " (id, name_first, name_last_company) VALUES (:id, :first_name, :last_name)", dict(
+            "INSERT INTO "
+            + context.table("contributors")
+            + " (id, name_first, name_last_company) VALUES (:id, :first_name, :last_name)",
+            dict(
                 id=mapped_id,
                 first_name=trimmed["name"].split(" ")[0].replace("'", "\\'"),
                 last_name=trimmed["name"].split(" ")[-1].replace("'", "\\'"),
-            )
+            ),
         )
         context.db.commit()
         context.create_mapped("authors", id, mapped_id)
     except:
         console.print(
-            "[red][bold]Insertion Error:[/bold] {data}[/red]".format(
-                data=trimmed
-            )
+            "[red][bold]Insertion Error:[/bold] {data}[/red]".format(data=trimmed)
         )
         return False
 
@@ -145,22 +153,23 @@ def store_edition(
     mapped_id = context.id("editions")
     try:
         context.db.execute(
-            "INSERT INTO " + context.table("books") + " (id, title, length, edition, release_dt, isbn) VALUES (:id, :title, :length, :edition, :release_dt, :isbn)", dict(
+            "INSERT INTO "
+            + context.table("books")
+            + " (id, title, length, edition, release_dt, isbn) VALUES (:id, :title, :length, :edition, :release_dt, :isbn)",
+            dict(
                 id=mapped_id,
                 title=trimmed["title"].replace("'", "\\'"),
                 length=trimmed["number_of_pages"],
                 edition=trimmed["revision"],
                 release_dt=parsed_dt,
                 isbn=int(trimmed["isbn_13"][0]),
-            )
+            ),
         )
         context.db.commit()
         context.create_mapped("editions", id, mapped_id)
     except:
         console.print(
-            "[red][bold]Insertion Error:[/bold] {data}[/red]".format(
-                data=trimmed
-            )
+            "[red][bold]Insertion Error:[/bold] {data}[/red]".format(data=trimmed)
         )
         return False
     return True
