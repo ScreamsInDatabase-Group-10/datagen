@@ -58,13 +58,15 @@ class GeneratorContext:
 
     def _open_database(self) -> Connection:
         conn = connect(self.options["db_file"])
+        conn.execute("DROP TABLE IF EXISTS staging_id_mapping;")
         conn.execute(
             "CREATE TABLE staging_id_mapping (original varchar(100) not null, mapped int not null, primary key (original, mapped));"
         )
+        conn.commit()
         return conn
 
     def cleanup(self):
-        self.db.execute("DROP TABLE staging_id;")
+        self.db.execute("DROP TABLE staging_id_mapping;")
         self.db.commit()
         self.db.close()
 

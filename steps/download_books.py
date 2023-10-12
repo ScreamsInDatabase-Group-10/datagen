@@ -1,7 +1,9 @@
 import requests
 from util import GeneratorContext
-from rich import print, Console
+from rich import print
 from rich.status import Status
+from rich.console import Console
+import json
 
 def dl_string(context: GeneratorContext, count: int) -> str:
     return "Downloading {count}{suffix}...".format(
@@ -20,9 +22,20 @@ def download_books_main(context: GeneratorContext):
         count = 0
         for line in data_stream.iter_lines(decode_unicode=True):
             status.update(dl_string(context, count + 1))
+            process_line(context, line, status.console)
             count += 1
             if context.options["data_limit"] and count > context.options["data_limit"]:
                 break
 
-def process_line(context: GeneratorContext, line: str, console: Console):
-    pass
+def process_line(context: GeneratorContext, line: str, console: Console) -> bool:
+    parts = line.split("\t")
+    record_type = parts[0]
+    record_id = parts[1]
+    record_data = json.loads(parts[4])
+
+    if record_type == "/type/author":
+        pass
+    if record_type == "/type/edition":
+        pass
+
+    return False    
