@@ -92,8 +92,8 @@ class GeneratorContext:
         for query, params in self.exec_cache.items():
             try:
                 self.db.executemany(query, self.exec_cache[query])
-            except:
-                pass
+            except SystemExit:
+                print("CACHE ERROR")
         if "staging" in self.options["steps"]:
             self.db.execute("DROP TABLE staging_id_mapping;")
         self.db.commit()
@@ -127,6 +127,6 @@ class GeneratorContext:
             try:
                 self.db.executemany(query, self.exec_cache[query])
             except:
-                pass
+                print("CACHE ERROR")
             self.db.commit()
             del self.exec_cache[query]

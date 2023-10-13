@@ -143,7 +143,7 @@ def store_edition(
     mapped_id = context.id("editions")
     try:
         context.execute_cached(
-            "INSERT INTO "
+            "INSERT OR IGNORE INTO "
             + context.table("books")
             + " (id, title, length, edition, release_dt, isbn) VALUES (:id, :title, :length, :edition, :release_dt, :isbn)",
             dict(
