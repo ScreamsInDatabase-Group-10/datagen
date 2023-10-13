@@ -48,7 +48,6 @@ def dl_string(context: GeneratorContext, count: int) -> str:
 
 
 def download_books_main(context: GeneratorContext):
-
     print("[green][bold]STEP: [/bold] Processing books...[/green]")
     with open(context.options["data_path"], "r") as data_stream:
         with Status(dl_string(context, 0)) as status:
@@ -58,13 +57,18 @@ def download_books_main(context: GeneratorContext):
                 try:
                     if process_line(context, line.strip(" \n"), status.console):
                         count += 1
-                except SystemExit:
+                except KeyboardInterrupt:
                     exit(0)
-                except:
+                except KeyboardInterrupt:
                     status.console.print(
-                        "[red][bold]Line Error:[/bold] {data}[/red]".format(data=line.strip(" \n"))
+                        "[red][bold]Line Error:[/bold] {data}[/red]".format(
+                            data=line.strip(" \n")
+                        )
                     )
-                if context.options["data_limit"] and count > context.options["data_limit"]:
+                if (
+                    context.options["data_limit"]
+                    and count > context.options["data_limit"]
+                ):
                     break
 
 
@@ -82,26 +86,17 @@ def store_author(
         return False
 
     mapped_id = context.id("authors")
-    try:
-        context.execute_cached(
-            "INSERT INTO "
-            + context.table("contributors")
-            + " (id, name_first, name_last_company) VALUES (:id, :first_name, :last_name)",
-            dict(
-                id=mapped_id,
-                first_name=trimmed["name"].split(" ")[0].replace("'", "\\'"),
-                last_name=trimmed["name"].split(" ")[-1].replace("'", "\\'"),
-            ),
-        )
-        context.db.commit()
-        context.create_mapped("authors", id, mapped_id)
-    except SystemExit:
-        exit(0)
-    except:
-        console.print(
-            "[red][bold]Insertion Error:[/bold] {data}[/red]".format(data=trimmed)
-        )
-        return False
+    context.execute_cached(
+        "INSERT OR IGNORE INTO "
+        + context.table("contributors")
+        + " (id, name_first, name_last_company) VALUES (:id, :first_name, :last_name)",
+        dict(
+            id=mapped_id,
+            first_name=trimmed["name"].split(" ")[0].replace("'", "\\'"),
+            last_name=trimmed["name"].split(" ")[-1].replace("'", "\\'"),
+        ),
+    )
+    context.create_mapped("authors", id, mapped_id)
 
     return True
 
@@ -141,29 +136,42 @@ def store_edition(
         return False
 
     mapped_id = context.id("editions")
-    try:
+    context.execute_cached(
+        "INSERT OR IGNORE INTO "
+        + context.table("books")
+        + " (id, title, length, edition, release_dt, isbn) VALUES (:id, :title, :length, :edition, :release_dt, :isbn)",
+        dict(
+            id=mapped_id,
+            title=trimmed["title"].replace("'", "\\'"),
+            length=trimmed["number_of_pages"],
+            edition=trimmed["revision"],
+            release_dt=parsed_dt,
+            isbn=int(trimmed["isbn_13"][0]),
+        ),
+    )
+    context.create_mapped("editions", id, mapped_id)
+
+    for g in trimmed["genres"]:
+        normal = g.lower().replace("-", "").replace(".", "")
+        if not normal in context.atomics["genre"].keys():
+            genre_id = context.id("genres")
+            context.execute_cached(
+                "INSERT OR IGNORE INTO "
+                + context.table("genres")
+                + " (id, name) VALUES (:id, :name)",
+                {"id": genre_id, "name": normal},
+            )
+            context.atomics["genre"][normal] = genre_id
+        else:
+            genre_id = context.atomics["genre"][normal]
+
         context.execute_cached(
             "INSERT OR IGNORE INTO "
-            + context.table("books")
-            + " (id, title, length, edition, release_dt, isbn) VALUES (:id, :title, :length, :edition, :release_dt, :isbn)",
-            dict(
-                id=mapped_id,
-                title=trimmed["title"].replace("'", "\\'"),
-                length=trimmed["number_of_pages"],
-                edition=trimmed["revision"],
-                release_dt=parsed_dt,
-                isbn=int(trimmed["isbn_13"][0]),
-            ),
+            + context.table("books.genres")
+            + " (book_id, genre_id) VALUES (:bid, :gid)",
+            {"bid": mapped_id, "gid": genre_id},
         )
-        context.db.commit()
-        context.create_mapped("editions", id, mapped_id)
-    except SystemExit:
-        exit(0)
-    except:
-        console.print(
-            "[red][bold]Insertion Error:[/bold] {data}[/red]".format(data=trimmed)
-        )
-        return False
+
     return True
 
 

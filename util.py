@@ -77,6 +77,10 @@ class GeneratorContext:
         self.db = self._open_database()
         self.ids: dict[str, int] = {}
         self.exec_cache: dict[str, list[dict]] = {}
+        self.atomics = {
+            "genre": {},
+            "audience": {}
+        }
 
     def _open_database(self) -> Connection:
         conn = connect(self.options["db_file"])

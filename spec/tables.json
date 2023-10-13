@@ -61,13 +61,13 @@
   {
     "name": "genres",
     "refer": "genres",
-    "columns": ["id integer", "name varchar(25) not null"],
+    "columns": ["id integer", "name varchar(25) not null unique"],
     "primary": ["id"]
   },
   {
     "name": "audiences",
     "refer": "audences",
-    "columns": ["id integer", "name varchar(25) not null"],
+    "columns": ["id integer", "name varchar(25) not null unique"],
     "primary": ["id"]
   },
   {
