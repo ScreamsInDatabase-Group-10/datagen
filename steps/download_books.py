@@ -10,6 +10,7 @@ from rich.progress import (
     TaskProgressColumn,
     BarColumn,
     MofNCompleteColumn,
+    TimeElapsedColumn
 )
 from rich.console import Console
 import json
@@ -56,6 +57,7 @@ def download_books_main(context: GeneratorContext):
                 BarColumn(),
                 TaskProgressColumn(),
                 MofNCompleteColumn(),
+                TimeElapsedColumn()
             )
         else:
             progress = Progress(
@@ -66,6 +68,7 @@ def download_books_main(context: GeneratorContext):
                 FileSizeColumn(),
                 TextColumn("/"),
                 TotalFileSizeColumn(),
+                TimeElapsedColumn()
             )
         bytesize = 0
         count = 0
