@@ -164,3 +164,4 @@ cython_debug/
 *.out
 *.db-journal
 *.dump
+*.ext

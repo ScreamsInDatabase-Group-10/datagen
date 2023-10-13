@@ -18,6 +18,7 @@ from typing_extensions import TypedDict
 import string
 import dateutil.parser
 import os
+import time
 
 EDITION_REQUIRED_KEYS = [
     "edition_name",
@@ -49,6 +50,7 @@ class TrimmedAuthor(TypedDict):
 
 def download_books_main(context: GeneratorContext):
     print("[green][bold]STEP: [/bold] Processing books...[/green]")
+    ls = int(time.time())
     with open(context.options["data_path"], "r") as data_stream:
         if context.options["data_limit"]:
             progress = Progress(
@@ -89,8 +91,6 @@ def download_books_main(context: GeneratorContext):
             try:
                 if process_line(context, line.strip(" \n"), progress.console):
                     count += 1
-                else:
-                    continue
             except KeyboardInterrupt:
                 exit(0)
             except:
@@ -100,11 +100,13 @@ def download_books_main(context: GeneratorContext):
                     )
                 )
 
-            if context.options["data_limit"]:
-                progress.update(task, completed=count)
-            else:
-                progress.update(task, completed=bytesize)
-            progress.refresh()
+            if int(time.time()) != ls:
+                ls = int(time.time())
+                if context.options["data_limit"]:
+                    progress.update(task, completed=count)
+                else:
+                    progress.update(task, completed=bytesize)
+                progress.refresh()
 
             if context.options["data_limit"] and count > context.options["data_limit"]:
                 break

@@ -47,7 +47,7 @@ REFERENCE_NAMES = Literal[
     "collections",
 ]
 
-CACHE_SIZE = 1000
+CACHE_SIZE = 5000
 
 
 class GeneratorContext:
@@ -86,6 +86,7 @@ class GeneratorContext:
 
     def _open_database(self) -> Connection:
         conn = connect(self.options["db_file"])
+        conn.isolation_level = "IMMEDIATE"
         if "staging" in self.options["steps"]:
             conn.execute("DROP TABLE IF EXISTS staging_id_mapping;")
             conn.execute(
