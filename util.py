@@ -27,13 +27,13 @@ class OptionsDict(TypedDict):
 
 
 REFERENCE_NAMES = Literal[
-    "books", 
-    "books.authors", 
-    "books.editors", 
-    "books.publishers", 
-    "books.genres", 
-    "books.audiences", 
-    "books.collections", 
+    "books",
+    "books.authors",
+    "books.editors",
+    "books.publishers",
+    "books.genres",
+    "books.audiences",
+    "books.collections",
     "contributors",
     "genres",
     "audiences",
@@ -42,10 +42,11 @@ REFERENCE_NAMES = Literal[
     "users.sessions",
     "users.collections",
     "users.following",
-    "collections"
+    "collections",
 ]
 
 CACHE_SIZE = 1000
+
 
 class GeneratorContext:
     def __init__(self):
@@ -77,10 +78,7 @@ class GeneratorContext:
         self.db = self._open_database()
         self.ids: dict[str, int] = {}
         self.exec_cache: dict[str, list[dict]] = {}
-        self.atomics = {
-            "genre": {},
-            "publisher": {}
-        }
+        self.atomics = {"genre": {}, "publisher": {}}
 
     def _open_database(self) -> Connection:
         conn = connect(self.options["db_file"])
@@ -89,17 +87,18 @@ class GeneratorContext:
             conn.execute(
                 "CREATE TABLE staging_id_mapping (original varchar(100) not null, mapped int not null, primary key (original, mapped));"
             )
+            conn.execute("DROP TABLE IF EXISTS staging_books_authors_mapping;")
+            conn.execute(
+                "CREATE TABLE staging_books_authors_mapping (book_id int not null, author_raw text not null, primary key (book_id, author_raw));"
+            )
             conn.commit()
         return conn
 
     def cleanup(self):
-        for query, params in self.exec_cache.items():
-            try:
-                self.db.executemany(query, self.exec_cache[query])
-            except SystemExit:
-                print("CACHE ERROR")
-        if "staging" in self.options["steps"]:
+        self.clean_cache()
+        if "clear_staging" in self.options["steps"]:
             self.db.execute("DROP TABLE staging_id_mapping;")
+            self.db.execute("DROP TABLE staging_books_authors_mapping;")
         self.db.commit()
         self.db.close()
 
@@ -116,12 +115,13 @@ class GeneratorContext:
         self.execute_cached(
             "INSERT INTO staging_id_mapping (original, mapped) VALUES ('{original}', {mapped})".format(
                 original=original_id, mapped=mapped_id
-            ), {}
+            ),
+            {},
         )
 
     def table(self, ref: REFERENCE_NAMES) -> str:
         return self.tables[ref]
-    
+
     def execute_cached(self, query: str, params: dict[str, Any]):
         if not query in self.exec_cache.keys():
             self.exec_cache[query] = []
@@ -134,3 +134,19 @@ class GeneratorContext:
                 print("CACHE ERROR")
             self.db.commit()
             del self.exec_cache[query]
+
+    def clean_cache(self):
+        for query, params in self.exec_cache.items():
+            try:
+                self.db.executemany(query, params)
+            except SystemExit:
+                print("CACHE ERROR")
+        self.exec_cache = {}
+
+    def stage_author(self, book: int, author: str):
+        if not "staging" in self.options["steps"]:
+            return
+        self.execute_cached(
+            "INSERT OR IGNORE INTO staging_books_authors_mapping (book_id, author_raw) VALUES (:book, :author)",
+            {"book": book, "author": author},
+        )

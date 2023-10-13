@@ -68,6 +68,7 @@ def download_books_main(context: GeneratorContext):
                     and count > context.options["data_limit"]
                 ):
                     break
+    context.clean_cache()
 
 
 def store_author(
@@ -171,8 +172,8 @@ def store_edition(
             {"bid": mapped_id, "gid": genre_id},
         )
 
-    for g in trimmed["publishers"]:
-        normal = g.lower()
+    for p in trimmed["publishers"]:
+        normal = p.lower()
         if not normal in context.atomics["publisher"].keys():
             pub_id = context.id("contributors")
             context.execute_cached(
@@ -191,6 +192,10 @@ def store_edition(
             + " (book_id, contributor_id) VALUES (:bid, :pid)",
             {"bid": mapped_id, "pid": pub_id},
         )
+
+    for a in trimmed["authors"]:
+        if "key" in a.keys():
+            context.stage_author(mapped_id, a["key"])
 
     return True
 
