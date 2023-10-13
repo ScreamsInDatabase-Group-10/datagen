@@ -23,7 +23,7 @@ DB_CLEAR = true # Clear database before run (true/false)
 DB_TABLES = spec/tables.json # Path to JSON file containing table creation commands (see next section)
 
 # Data Source
-DATA_URL = https://files.dax.gay/ol_dump_2023-08-31.txt # URL to get data from
+DATA_PATH = ol_dump.dump # File to read raw data from
 DATA_LIMIT = 10000 # Amount of records to load, omit to remove limit
 
 # User Generation

@@ -4,7 +4,6 @@ from rich import print
 from rich.status import Status
 from rich.console import Console
 import json
-import os
 from typing_extensions import TypedDict
 import string
 import dateutil.parser
@@ -49,41 +48,29 @@ def dl_string(context: GeneratorContext, count: int) -> str:
 
 
 def download_books_main(context: GeneratorContext):
-    if os.path.exists("authors.out"):
-        os.remove("authors.out")
 
-    if os.path.exists("editions.out"):
-        os.remove("editions.out")
-
-    print("[green][bold]STEP: [/bold] Downloading books...[/green]")
-    data_stream = requests.get(context.options["data_url"], stream=True)
-
-    if data_stream.encoding is None:
-        data_stream.encoding = "utf-8"
-
-    with Status(dl_string(context, 0)) as status:
-        count = 0
-        for line in data_stream.iter_lines(decode_unicode=True):
-            status.update(dl_string(context, count + 1))
-            try:
-                if process_line(context, line, status.console):
-                    count += 1
-            except SystemExit:
-                exit(0)
-            except:
-                status.console.print(
-                    "[red][bold]Line Error:[/bold] {data}[/red]".format(data=line)
-                )
-            if context.options["data_limit"] and count > context.options["data_limit"]:
-                break
+    print("[green][bold]STEP: [/bold] Processing books...[/green]")
+    with open(context.options["data_path"], "r") as data_stream:
+        with Status(dl_string(context, 0)) as status:
+            count = 0
+            for line in data_stream:
+                status.update(dl_string(context, count + 1))
+                try:
+                    if process_line(context, line.strip(" \n"), status.console):
+                        count += 1
+                except SystemExit:
+                    exit(0)
+                except:
+                    status.console.print(
+                        "[red][bold]Line Error:[/bold] {data}[/red]".format(data=line.strip(" \n"))
+                    )
+                if context.options["data_limit"] and count > context.options["data_limit"]:
+                    break
 
 
 def store_author(
     id: str, data: dict, context: GeneratorContext, console: Console
 ) -> bool:
-    with open("authors.out", "a") as f:
-        f.write(json.dumps(data) + "\n")
-
     if not all([k in data.keys() for k in AUTHOR_REQUIRED_KEYS]):
         return False
 
@@ -96,7 +83,7 @@ def store_author(
 
     mapped_id = context.id("authors")
     try:
-        context.db.execute(
+        context.execute_cached(
             "INSERT INTO "
             + context.table("contributors")
             + " (id, name_first, name_last_company) VALUES (:id, :first_name, :last_name)",
@@ -122,9 +109,6 @@ def store_author(
 def store_edition(
     id: str, data: dict, context: GeneratorContext, console: Console
 ) -> bool:
-    with open("editions.out", "a") as f:
-        f.write(json.dumps(data) + "\n")
-
     if not all([k in data.keys() for k in EDITION_REQUIRED_KEYS]):
         return False
 
@@ -158,7 +142,7 @@ def store_edition(
 
     mapped_id = context.id("editions")
     try:
-        context.db.execute(
+        context.execute_cached(
             "INSERT INTO "
             + context.table("books")
             + " (id, title, length, edition, release_dt, isbn) VALUES (:id, :title, :length, :edition, :release_dt, :isbn)",

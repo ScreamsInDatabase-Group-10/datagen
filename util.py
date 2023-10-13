@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from os import getenv, environ
 from typing_extensions import TypedDict
-from typing import Union, Literal
+from typing import Union, Literal, Any
 from sqlite3 import Connection, connect
 
 
@@ -10,7 +10,7 @@ class OptionsDict(TypedDict):
     db_file: str
     db_clear: bool
     db_tables: str
-    data_url: str
+    data_path: str
     data_limit: Union[int, None]
     user_count: int
     max_password: int
@@ -45,6 +45,8 @@ REFERENCE_NAMES = Literal[
     "collections"
 ]
 
+CACHE_SIZE = 1000
+
 class GeneratorContext:
     def __init__(self):
         load_dotenv()
@@ -57,7 +59,7 @@ class GeneratorContext:
             "db_file": environ["DB_FILE"],
             "db_clear": getenv("DB_CLEAR", "true") == "true",
             "db_tables": environ["DB_TABLES"],
-            "data_url": environ["DATA_URL"],
+            "data_path": environ["DATA_PATH"],
             "data_limit": int(environ["DATA_LIMIT"]) if getenv("DATA_LIMIT") else None,
             "user_count": int(getenv("USER_COUNT", "500")),
             "max_password": int(getenv("MAX_PASSWORD", "50")),
@@ -74,6 +76,7 @@ class GeneratorContext:
         }
         self.db = self._open_database()
         self.ids: dict[str, int] = {}
+        self.exec_cache: dict[str, list[dict]] = {}
 
     def _open_database(self) -> Connection:
         conn = connect(self.options["db_file"])
@@ -86,6 +89,11 @@ class GeneratorContext:
         return conn
 
     def cleanup(self):
+        for query, params in self.exec_cache.items():
+            try:
+                self.db.executemany(query, self.exec_cache[query])
+            except:
+                pass
         if "staging" in self.options["steps"]:
             self.db.execute("DROP TABLE staging_id_mapping;")
         self.db.commit()
@@ -101,11 +109,24 @@ class GeneratorContext:
     def create_mapped(self, entity_type: str, original_id: str, mapped_id: int):
         if not "staging" in self.options["steps"]:
             return
-        self.db.execute(
+        self.execute_cached(
             "INSERT INTO staging_id_mapping (original, mapped) VALUES ('{original}', {mapped})".format(
                 original=original_id, mapped=mapped_id
-            )
+            ), {}
         )
 
     def table(self, ref: REFERENCE_NAMES) -> str:
         return self.tables[ref]
+    
+    def execute_cached(self, query: str, params: dict[str, Any]):
+        if not query in self.exec_cache.keys():
+            self.exec_cache[query] = []
+
+        self.exec_cache[query].append(params)
+        if len(self.exec_cache[query]) > CACHE_SIZE:
+            try:
+                self.db.executemany(query, self.exec_cache[query])
+            except:
+                pass
+            self.db.commit()
+            del self.exec_cache[query]

@@ -1,6 +1,5 @@
 python-dotenv
 rich
-requests
 markov-word-generator
 unidecode
 typing-extensions
