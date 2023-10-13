@@ -68,6 +68,8 @@ def download_books_main(context: GeneratorContext):
             try:
                 if process_line(context, line, status.console):
                     count += 1
+            except SystemExit:
+                exit(0)
             except:
                 status.console.print(
                     "[red][bold]Line Error:[/bold] {data}[/red]".format(data=line)
@@ -106,6 +108,8 @@ def store_author(
         )
         context.db.commit()
         context.create_mapped("authors", id, mapped_id)
+    except SystemExit:
+        exit(0)
     except:
         console.print(
             "[red][bold]Insertion Error:[/bold] {data}[/red]".format(data=trimmed)
@@ -142,6 +146,8 @@ def store_edition(
 
     try:
         parsed_dt = int(dateutil.parser.parse(trimmed["publish_date"]).timestamp())
+    except SystemExit:
+        exit(0)
     except:
         console.print(
             "[red][bold]Parse Error:[/bold] Parsing date string {dstring}[/red]".format(
@@ -167,6 +173,8 @@ def store_edition(
         )
         context.db.commit()
         context.create_mapped("editions", id, mapped_id)
+    except SystemExit:
+        exit(0)
     except:
         console.print(
             "[red][bold]Insertion Error:[/bold] {data}[/red]".format(data=trimmed)
