@@ -9,28 +9,26 @@ import string
 import dateutil.parser
 
 EDITION_REQUIRED_KEYS = [
-    "revision",
+    "edition_name",
     "title",
     "number_of_pages",
     "publish_date",
     "publishers",
     "authors",
     "genres",
-    "subjects",
     "isbn_13",
 ]
 AUTHOR_REQUIRED_KEYS = ["name"]
 
 
 class TrimmedEdition(TypedDict):
-    revision: int
+    edition_name: str
     title: str
     number_of_pages: int
     publish_date: str
     publishers: list[str]
     authors: list[dict[str, str]]
     genres: list[str]
-    subjects: list[str]
     isbn_10: list[str]
 
 
@@ -85,7 +83,7 @@ def store_author(
     if len(trimmed["name"].split(" ")) < 2:
         return False
 
-    mapped_id = context.id("authors")
+    mapped_id = context.id("contributors")
     context.execute_cached(
         "INSERT OR IGNORE INTO "
         + context.table("contributors")
@@ -96,7 +94,7 @@ def store_author(
             last_name=trimmed["name"].split(" ")[-1].replace("'", "\\'"),
         ),
     )
-    context.create_mapped("authors", id, mapped_id)
+    context.create_mapped("contributors", id, mapped_id)
 
     return True
 
@@ -136,6 +134,7 @@ def store_edition(
         return False
 
     mapped_id = context.id("editions")
+
     context.execute_cached(
         "INSERT OR IGNORE INTO "
         + context.table("books")
@@ -144,7 +143,7 @@ def store_edition(
             id=mapped_id,
             title=trimmed["title"].replace("'", "\\'"),
             length=trimmed["number_of_pages"],
-            edition=trimmed["revision"],
+            edition=trimmed["edition_name"],
             release_dt=parsed_dt,
             isbn=int(trimmed["isbn_13"][0]),
         ),
@@ -170,6 +169,27 @@ def store_edition(
             + context.table("books.genres")
             + " (book_id, genre_id) VALUES (:bid, :gid)",
             {"bid": mapped_id, "gid": genre_id},
+        )
+
+    for g in trimmed["publishers"]:
+        normal = g.lower()
+        if not normal in context.atomics["publisher"].keys():
+            pub_id = context.id("contributors")
+            context.execute_cached(
+                "INSERT OR IGNORE INTO "
+                + context.table("contributors")
+                + " (id, name_first, name_last_company) VALUES (:id, NULL, :name)",
+                {"id": pub_id, "name": normal},
+            )
+            context.atomics["publisher"][normal] = pub_id
+        else:
+            pub_id = context.atomics["publisher"][normal]
+
+        context.execute_cached(
+            "INSERT OR IGNORE INTO "
+            + context.table("books.publishers")
+            + " (book_id, contributor_id) VALUES (:bid, :pid)",
+            {"bid": mapped_id, "pid": pub_id},
         )
 
     return True

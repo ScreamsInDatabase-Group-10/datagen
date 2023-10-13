@@ -79,7 +79,7 @@ class GeneratorContext:
         self.exec_cache: dict[str, list[dict]] = {}
         self.atomics = {
             "genre": {},
-            "audience": {}
+            "publisher": {}
         }
 
     def _open_database(self) -> Connection:

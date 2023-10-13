@@ -6,7 +6,7 @@
       "id integer",
       "title text not null",
       "length integer check (length > 0) not null",
-      "edition int",
+      "edition varchar(256) not null",
       "release_dt datetime not null",
       "isbn integer unique not null"
     ],
@@ -53,7 +53,7 @@
     "refer": "contributors",
     "columns": [
       "id integer",
-      "name_first varchar(25) not null",
+      "name_first varchar(25)",
       "name_last_company varchar(50) not null"
     ],
     "primary": ["id"]

@@ -10,6 +10,7 @@ Configure using a `.env` file with the following values specified:
 # - staging : Build & Destroy ID staging table
 # - tables : Build tables & setup DB
 # - download_books : Get book/contrib data and feed into tables
+# - link_books : Link books to contributors & audiences, trim books without authors and authors without books
 # - make_users : Generate users (without any linking)
 # - supplemental : Link users to entities, generate ratings, generate follows, generate sessions, etc
 STEPS = staging tables download_books make_users supplemental
