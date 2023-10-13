@@ -24,6 +24,8 @@ class OptionsDict(TypedDict):
     max_sessions: int
     max_session_time: int
     max_following: int
+    audiences: list[str]
+    max_audiences: int
 
 
 REFERENCE_NAMES = Literal[
@@ -74,6 +76,8 @@ class GeneratorContext:
             "max_sessions": int(getenv("MAX_SESSIONS", "50")),
             "max_session_time": int(getenv("MAX_SESSION_TIME", "10")),
             "max_following": int(getenv("MAX_FOLLOWING", "100")),
+            "audiences": [i.strip() for i in getenv("AUDIENCES", "").split(",")],
+            "max_audiences": int(getenv("MAX_AUDIENCES", "3"))
         }
         self.db = self._open_database()
         self.ids: dict[str, int] = {}

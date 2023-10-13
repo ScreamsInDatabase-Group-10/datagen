@@ -43,6 +43,8 @@ MAX_COLLECTION_NAME = 50 # Max length of collection name
 MAX_SESSIONS = 50 # Max sessions/user
 MAX_SESSION_TIME = 10 # Max session time in hours
 MAX_FOLLOWING = 100 # Max amount of other users a user can follow
+MAX_AUDIENCES = 3 # Max number of audiences/book
+AUDIENCES = young adult, adult, children, education, government, reference # Comma-separated list of audience names
 ```
 
 ### Table Specification
