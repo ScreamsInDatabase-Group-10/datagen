@@ -14,7 +14,7 @@ Configure using a `.env` file with the following values specified:
 # - make_users : Generate users (without any linking)
 # - supplemental : Link users to entities, generate ratings, generate follows, generate sessions, etc
 # - clear_staging : Delete staging tables
-STEPS = staging tables download_books make_users supplemental clear_staging
+STEPS = staging tables download_books link_books make_users supplemental clear_staging
 
 # Database Options (currently with sqlite)
 
