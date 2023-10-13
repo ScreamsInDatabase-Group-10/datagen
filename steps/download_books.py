@@ -1,12 +1,22 @@
 import requests
 from util import GeneratorContext
 from rich import print
-from rich.status import Status
+from rich.progress import (
+    Progress,
+    FileSizeColumn,
+    SpinnerColumn,
+    TextColumn,
+    TotalFileSizeColumn,
+    TaskProgressColumn,
+    BarColumn,
+    MofNCompleteColumn,
+)
 from rich.console import Console
 import json
 from typing_extensions import TypedDict
 import string
 import dateutil.parser
+import os
 
 EDITION_REQUIRED_KEYS = [
     "edition_name",
@@ -36,38 +46,66 @@ class TrimmedAuthor(TypedDict):
     name: str
 
 
-def dl_string(context: GeneratorContext, count: int) -> str:
-    return "Downloading {count}{suffix}...".format(
-        count=str(count),
-        suffix=(" / " + str(context.options["data_limit"]))
-        if context.options["data_limit"]
-        else "",
-    )
-
-
 def download_books_main(context: GeneratorContext):
     print("[green][bold]STEP: [/bold] Processing books...[/green]")
     with open(context.options["data_path"], "r") as data_stream:
-        with Status(dl_string(context, 0)) as status:
-            count = 0
-            for line in data_stream:
-                status.update(dl_string(context, count + 1))
-                try:
-                    if process_line(context, line.strip(" \n"), status.console):
-                        count += 1
-                except KeyboardInterrupt:
-                    exit(0)
-                except KeyboardInterrupt:
-                    status.console.print(
-                        "[red][bold]Line Error:[/bold] {data}[/red]".format(
-                            data=line.strip(" \n")
-                        )
+        if context.options["data_limit"]:
+            progress = Progress(
+                SpinnerColumn(),
+                TextColumn("{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                MofNCompleteColumn(),
+            )
+        else:
+            progress = Progress(
+                SpinnerColumn(),
+                TextColumn("{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                FileSizeColumn(),
+                TextColumn("/"),
+                TotalFileSizeColumn(),
+            )
+        bytesize = 0
+        count = 0
+        if context.options["data_limit"]:
+            task = progress.add_task(
+                "[green]Processing data...", total=context.options["data_limit"]
+            )
+        else:
+            task = progress.add_task(
+                "[green]Processing data...",
+                total=os.stat(context.options["data_path"]).st_size,
+            )
+
+        progress.start()
+
+        for line in data_stream:
+            bytesize += len(line)
+            try:
+                if process_line(context, line.strip(" \n"), progress.console):
+                    count += 1
+                else:
+                    continue
+            except KeyboardInterrupt:
+                exit(0)
+            except:
+                progress.console.print(
+                    "[red][bold]Line Error:[/bold] {data}[/red]".format(
+                        data=line.strip(" \n")
                     )
-                if (
-                    context.options["data_limit"]
-                    and count > context.options["data_limit"]
-                ):
-                    break
+                )
+
+            if context.options["data_limit"]:
+                progress.update(task, completed=count)
+            else:
+                progress.update(task, completed=bytesize)
+            progress.refresh()
+
+            if context.options["data_limit"] and count > context.options["data_limit"]:
+                break
+    progress.stop()
     context.clean_cache()
 
 
