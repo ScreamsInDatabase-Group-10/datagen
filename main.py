@@ -3,6 +3,7 @@ from steps.tables import tables_main
 from steps.download_books import download_books_main
 from steps.link_books import link_books_main
 from steps.make_users import make_users_main
+from steps.supplemental import supplemental_main
 
 def main():
     context = GeneratorContext()
@@ -15,6 +16,9 @@ def main():
 
     if "make_users" in context.options["steps"]:
         make_users_main(context)
+    
+    if "supplemental" in context.options["steps"]:
+        supplemental_main(context)
 
     context.cleanup()
 
