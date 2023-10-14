@@ -25,11 +25,14 @@ EDITION_REQUIRED_KEYS = [
     "title",
     "number_of_pages",
     "publish_date",
-    "publishers",
     "authors",
-    "genres",
     "isbn_13",
 ]
+EDITION_OPTIONAL_KEYS = [
+    "publishers",
+    "genres"
+]
+
 AUTHOR_REQUIRED_KEYS = ["name"]
 
 
@@ -150,13 +153,10 @@ def store_edition(
         return False
 
     trimmed: TrimmedEdition = {
-        k: v for k, v in data.items() if k in EDITION_REQUIRED_KEYS
+        k: v for k, v in data.items() if k in EDITION_REQUIRED_KEYS or k in EDITION_OPTIONAL_KEYS
     }
 
     if len(trimmed["authors"]) == 0:
-        return False
-
-    if len(trimmed["publishers"]) == 0:
         return False
 
     if len(trimmed["isbn_13"]) == 0:
@@ -166,7 +166,7 @@ def store_edition(
         return False
 
     try:
-        parsed_dt = int(dateutil.parser.parse(trimmed["publish_date"]).timestamp())
+        parsed_dt = int(dateutil.parser.parse(trimmed["publish_date"].replace("?", "")).timestamp())
     except SystemExit:
         exit(0)
     except:
@@ -194,7 +194,7 @@ def store_edition(
     )
     context.create_mapped("editions", id, mapped_id)
 
-    for g in trimmed["genres"]:
+    for g in trimmed.get("genres", []):
         normal = g.lower().replace("-", "").replace(".", "")
         if not normal in context.atomics["genre"].keys():
             genre_id = context.id("genres")
@@ -215,7 +215,7 @@ def store_edition(
             {"bid": mapped_id, "gid": genre_id},
         )
 
-    for p in trimmed["publishers"]:
+    for p in trimmed.get("publishers", []):
         normal = p.lower()
         if not normal in context.atomics["publisher"].keys():
             pub_id = context.id("contributors")
