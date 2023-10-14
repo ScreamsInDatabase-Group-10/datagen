@@ -1,4 +1,3 @@
-import requests
 from util import GeneratorContext
 from rich import print
 from rich.progress import (
