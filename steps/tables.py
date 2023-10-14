@@ -19,11 +19,11 @@ def tables_main(context: GeneratorContext):
     if "tables" in context.options["steps"]:
         with Progress() as progress:
             progress.console.print("[green][bold]STEP: [/bold] Generating tables...[/green]")
-            tables_task = progress.add_task("Creating tables...", total=len(spec))
+            tables_task = progress.add_task("\tCreating tables...", total=len(spec))
             for table in spec:
                 create_table(context, table)
                 progress.update(tables_task, advance=1)
-                progress.console.print(f"[grey70 italic]Generated {table['refer']} ({table['name']})[/grey70 italic]")
+                progress.console.print(f"\t[grey70 italic]Generated {table['refer']} ({table['name']})[/grey70 italic]")
             
             context.db.commit()
 

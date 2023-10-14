@@ -78,11 +78,11 @@ def download_books_main(context: GeneratorContext):
         count = 0
         if context.options["data_limit"]:
             task = progress.add_task(
-                "[green]Processing data...", total=context.options["data_limit"]
+                "\t[green]Processing data...", total=context.options["data_limit"]
             )
         else:
             task = progress.add_task(
-                "[green]Processing data...",
+                "\t[green]Processing data...",
                 total=os.stat(context.options["data_path"]).st_size,
             )
 
@@ -97,7 +97,7 @@ def download_books_main(context: GeneratorContext):
                 exit(0)
             except:
                 progress.console.print(
-                    "[red][bold]Line Error:[/bold] {data}[/red]".format(
+                    "\t[red][bold]Line Error:[/bold] {data}[/red]".format(
                         data=line.strip(" \n")
                     )
                 )
@@ -170,7 +170,7 @@ def store_edition(
         exit(0)
     except:
         console.print(
-            "[red][bold]Parse Error:[/bold] Parsing date string {dstring}[/red]".format(
+            "\t[red][bold]Parse Error:[/bold] Parsing date string {dstring}[/red]".format(
                 dstring=trimmed["publish_date"]
             )
         )
