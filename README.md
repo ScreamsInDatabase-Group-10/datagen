@@ -30,6 +30,7 @@ DATA_LIMIT = 10000 # Amount of records to load, omit to remove limit
 
 # User Generation
 USER_COUNT = 500 # Number of users to generate
+MAX_EMAIL = 50 # Max length of email
 MAX_PASSWORD = 50 # Max length of password
 MAX_NAME = 25 # Max length of first and last names (individually)
 NAMES_DICT = spec/names.dic # Dictionary file for markov chain

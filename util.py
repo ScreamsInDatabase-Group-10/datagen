@@ -15,6 +15,7 @@ class OptionsDict(TypedDict):
     user_count: int
     max_password: int
     max_name: int
+    max_email: int
     names_dict: str
     words_dict: str
     max_ratings: int
@@ -67,6 +68,7 @@ class GeneratorContext:
             "user_count": int(getenv("USER_COUNT", "500")),
             "max_password": int(getenv("MAX_PASSWORD", "50")),
             "max_name": int(getenv("MAX_NAME", "25")),
+            "max_email": int(getenv("MAX_EMAIL", "50")),
             "names_dict": environ["NAMES_DICT"],
             "words_dict": environ["WORDS_DICT"],
             "max_ratings": int(getenv("MAX_RATINGS", "100")),
