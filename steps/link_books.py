@@ -15,19 +15,52 @@ def store_audiences(context: GeneratorContext):
     )
     context.db.commit()
 
+
 def link_audiences(context: GeneratorContext):
-    for book_id in track(range(context.ids["editions"]), description="\tAssigning audiences to books..."):
+    for book_id in track(
+        range(context.ids["editions"]), description="\tAssigning audiences to books..."
+    ):
         to_select = context.options["audiences"][:]
         random.shuffle(to_select)
-        to_select = to_select[:random.randint(1, context.options["max_audiences"])]
+        to_select = to_select[: random.randint(1, context.options["max_audiences"])]
         for audience in to_select:
-            context.execute_cached("INSERT OR IGNORE INTO " + context.table("books.audiences") + " (book_id, audience_id) VALUES (:bid, :aid)", {
-                "bid": book_id,
-                "aid": context.options["audiences"].index(audience)
-            })
+            context.execute_cached(
+                "INSERT OR IGNORE INTO "
+                + context.table("books.audiences")
+                + " (book_id, audience_id) VALUES (:bid, :aid)",
+                {"bid": book_id, "aid": context.options["audiences"].index(audience)},
+            )
 
 
 def link_books_main(context: GeneratorContext):
     print("[green][bold]STEP: [/bold] Linking books...[/green]")
     store_audiences(context)
     link_audiences(context)
+
+    print("\tLinking authors...")
+    context.db.execute(
+        "INSERT INTO {books_authors} (book_id, contributor_id) SELECT book_id, mapped from (SELECT * FROM staging_books_authors_mapping INNER JOIN staging_id_mapping ON author_raw=original)".format(
+            books_authors=context.table("books.authors")
+        )
+    )
+
+    print("\tLinking editors...")
+    context.db.execute(
+        "INSERT INTO {books_editors} (book_id, contributor_id) SELECT book_id, mapped from (SELECT * FROM staging_books_authors_mapping INNER JOIN staging_id_mapping ON author_raw=original) WHERE MOD(mapped, 5) = 0".format(
+            books_editors=context.table("books.editors")
+        )
+    )
+
+    print("\tTrimming books...")
+    context.db.execute(
+        "DELETE FROM {books} WHERE id NOT IN (SELECT book_id FROM books_authors)".format(
+            books=context.table("books")
+        )
+    )
+
+    print("\tTrimming contributors...")
+    context.db.execute(
+        "DELETE FROM {contributors} WHERE id NOT IN (SELECT contributor_id FROM books_authors) AND name_first IS NOT NULL".format(
+            contributors=context.table("contributors")
+        )
+    )

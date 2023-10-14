@@ -56,6 +56,7 @@ def download_books_main(context: GeneratorContext):
     with open(context.options["data_path"], "r") as data_stream:
         if context.options["data_limit"]:
             progress = Progress(
+                TextColumn("\t"),
                 SpinnerColumn(),
                 TextColumn("{task.description}"),
                 BarColumn(),
@@ -65,6 +66,7 @@ def download_books_main(context: GeneratorContext):
             )
         else:
             progress = Progress(
+                TextColumn("\t"),
                 SpinnerColumn(),
                 TextColumn("{task.description}"),
                 BarColumn(),
@@ -78,11 +80,11 @@ def download_books_main(context: GeneratorContext):
         count = 0
         if context.options["data_limit"]:
             task = progress.add_task(
-                "\t[green]Processing data...", total=context.options["data_limit"]
+                "[green]Processing data...", total=context.options["data_limit"]
             )
         else:
             task = progress.add_task(
-                "\t[green]Processing data...",
+                "[green]Processing data...",
                 total=os.stat(context.options["data_path"]).st_size,
             )
 
