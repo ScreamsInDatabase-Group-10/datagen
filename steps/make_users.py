@@ -5,6 +5,7 @@ from rich.progress import track
 from rich.console import Console
 import time
 import random
+import datetime
 
 
 def make_users_main(context: GeneratorContext):
@@ -36,13 +37,13 @@ def make_users_main(context: GeneratorContext):
         access_time = random.randint(creation_time, int(time.time()))
         internal_id = context.id("users")
         context.execute_cached(
-            "INSERT OR IGNORE INTO "
+            "INSERT INTO "
             + context.table("users")
-            + " (id, creation_dt, access_dt, name_first, name_last, email, password) VALUES (:id, :creation, :access, :first, :last, :email, :password)",
+            + " (id, creation_dt, access_dt, name_first, name_last, email, password) VALUES (:id, :creation, :access, :first, :last, :email, :password) ON CONFLICT DO NOTHING",
             {
                 "id": internal_id,
-                "creation": creation_time,
-                "access": access_time,
+                "creation": datetime.datetime.fromtimestamp(creation_time).isoformat(),
+                "access": datetime.datetime.fromtimestamp(access_time).isoformat(),
                 "first": first_name,
                 "last": last_name,
                 "email": email,

@@ -9,7 +9,7 @@ from rich.progress import (
     TaskProgressColumn,
     BarColumn,
     MofNCompleteColumn,
-    TimeElapsedColumn
+    TimeElapsedColumn,
 )
 from rich.console import Console
 import json
@@ -18,6 +18,7 @@ import string
 import dateutil.parser
 import os
 import time
+import datetime
 
 EDITION_REQUIRED_KEYS = [
     "edition_name",
@@ -27,10 +28,7 @@ EDITION_REQUIRED_KEYS = [
     "authors",
     "isbn_13",
 ]
-EDITION_OPTIONAL_KEYS = [
-    "publishers",
-    "genres"
-]
+EDITION_OPTIONAL_KEYS = ["publishers", "genres"]
 
 AUTHOR_REQUIRED_KEYS = ["name"]
 
@@ -62,7 +60,7 @@ def download_books_main(context: GeneratorContext):
                 BarColumn(),
                 TaskProgressColumn(),
                 MofNCompleteColumn(),
-                TimeElapsedColumn()
+                TimeElapsedColumn(),
             )
         else:
             progress = Progress(
@@ -74,7 +72,7 @@ def download_books_main(context: GeneratorContext):
                 FileSizeColumn(),
                 TextColumn("/"),
                 TotalFileSizeColumn(),
-                TimeElapsedColumn()
+                TimeElapsedColumn(),
             )
         bytesize = 0
         count = 0
@@ -97,7 +95,7 @@ def download_books_main(context: GeneratorContext):
                     count += 1
             except KeyboardInterrupt:
                 exit(0)
-            except:
+            except SystemExit:
                 progress.console.print(
                     "\t[red][bold]Line Error:[/bold] {data}[/red]".format(
                         data=line.strip(" \n")
@@ -133,13 +131,13 @@ def store_author(
 
     mapped_id = context.id("contributors")
     context.execute_cached(
-        "INSERT OR IGNORE INTO "
+        "INSERT INTO "
         + context.table("contributors")
-        + " (id, name_first, name_last_company) VALUES (:id, :first_name, :last_name)",
+        + " (id, name_first, name_last_company) VALUES (:id, :first_name, :last_name) ON CONFLICT DO NOTHING",
         dict(
             id=mapped_id,
-            first_name=trimmed["name"].split(" ")[0].replace("'", "\\'"),
-            last_name=trimmed["name"].split(" ")[-1].replace("'", "\\'"),
+            first_name=trimmed["name"].split(" ")[0].replace("'", "\\'")[:25],
+            last_name=trimmed["name"].split(" ")[-1].replace("'", "\\'")[:50],
         ),
     )
     context.create_mapped("contributors", id, mapped_id)
@@ -154,7 +152,9 @@ def store_edition(
         return False
 
     trimmed: TrimmedEdition = {
-        k: v for k, v in data.items() if k in EDITION_REQUIRED_KEYS or k in EDITION_OPTIONAL_KEYS
+        k: v
+        for k, v in data.items()
+        if k in EDITION_REQUIRED_KEYS or k in EDITION_OPTIONAL_KEYS
     }
 
     if len(trimmed["authors"]) == 0:
@@ -167,7 +167,9 @@ def store_edition(
         return False
 
     try:
-        parsed_dt = int(dateutil.parser.parse(trimmed["publish_date"].replace("?", "")).timestamp())
+        parsed_dt = int(
+            dateutil.parser.parse(trimmed["publish_date"].replace("?", "")).timestamp()
+        )
     except SystemExit:
         exit(0)
     except:
@@ -181,15 +183,15 @@ def store_edition(
     mapped_id = context.id("editions")
 
     context.execute_cached(
-        "INSERT OR IGNORE INTO "
+        "INSERT INTO "
         + context.table("books")
-        + " (id, title, length, edition, release_dt, isbn) VALUES (:id, :title, :length, :edition, :release_dt, :isbn)",
+        + " (id, title, length, edition, release_dt, isbn) VALUES (:id, :title, :length, :edition, :release_dt, :isbn) ON CONFLICT DO NOTHING",
         dict(
             id=mapped_id,
             title=trimmed["title"].replace("'", "\\'"),
             length=trimmed["number_of_pages"],
             edition=trimmed["edition_name"],
-            release_dt=parsed_dt,
+            release_dt=datetime.datetime.fromtimestamp(parsed_dt).isoformat(),
             isbn=int(trimmed["isbn_13"][0]),
         ),
     )
@@ -202,19 +204,19 @@ def store_edition(
         if not normal in context.atomics["genre"].keys():
             genre_id = context.id("genres")
             context.execute_cached(
-                "INSERT OR IGNORE INTO "
+                "INSERT INTO "
                 + context.table("genres")
-                + " (id, name) VALUES (:id, :name)",
-                {"id": genre_id, "name": normal},
+                + " (id, name) VALUES (:id, :name) ON CONFLICT DO NOTHING",
+                {"id": genre_id, "name": normal[:25]},
             )
             context.atomics["genre"][normal] = genre_id
         else:
             genre_id = context.atomics["genre"][normal]
 
         context.execute_cached(
-            "INSERT OR IGNORE INTO "
+            "INSERT INTO "
             + context.table("books.genres")
-            + " (book_id, genre_id) VALUES (:bid, :gid)",
+            + " (book_id, genre_id) VALUES (:bid, :gid) ON CONFLICT DO NOTHING",
             {"bid": mapped_id, "gid": genre_id},
         )
 
@@ -223,19 +225,19 @@ def store_edition(
         if not normal in context.atomics["publisher"].keys():
             pub_id = context.id("contributors")
             context.execute_cached(
-                "INSERT OR IGNORE INTO "
+                "INSERT INTO "
                 + context.table("contributors")
-                + " (id, name_first, name_last_company) VALUES (:id, NULL, :name)",
-                {"id": pub_id, "name": normal},
+                + " (id, name_first, name_last_company) VALUES (:id, NULL, :name) ON CONFLICT DO NOTHING",
+                {"id": pub_id, "name": normal[:50]},
             )
             context.atomics["publisher"][normal] = pub_id
         else:
             pub_id = context.atomics["publisher"][normal]
 
         context.execute_cached(
-            "INSERT OR IGNORE INTO "
+            "INSERT INTO "
             + context.table("books.publishers")
-            + " (book_id, contributor_id) VALUES (:bid, :pid)",
+            + " (book_id, contributor_id) VALUES (:bid, :pid) ON CONFLICT DO NOTHING",
             {"bid": mapped_id, "pid": pub_id},
         )
 

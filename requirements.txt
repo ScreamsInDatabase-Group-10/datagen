@@ -4,3 +4,5 @@ markov-word-generator
 unidecode
 typing-extensions
 python-dateutil
+psycopg[binary]
+sshtunnel

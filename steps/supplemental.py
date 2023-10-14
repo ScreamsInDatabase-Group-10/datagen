@@ -4,6 +4,7 @@ from rich.progress import track
 import random
 from markov_word_generator import MarkovWordGenerator
 import time
+import datetime
 
 
 def build_collections(context: GeneratorContext):
@@ -119,15 +120,15 @@ def read_books(context: GeneratorContext):
             end_page = random.randint(start_page, context.atomics["pages"][book])
             session_id = context.id("sessions")
             context.execute_cached(
-                "INSERT OR IGNORE INTO "
+                "INSERT INTO "
                 + context.table("users.sessions")
-                + " (session_id, book_id, user_id, start_datetime, end_datetime, start_page, end_page) VALUES (:sid, :bid, :uid, :sdt, :edt, :sp, :ep)",
+                + " (session_id, book_id, user_id, start_datetime, end_datetime, start_page, end_page) VALUES (:sid, :bid, :uid, :sdt, :edt, :sp, :ep) ON CONFLICT DO NOTHING",
                 {
                     "sid": session_id,
                     "bid": book,
                     "uid": user_id,
-                    "sdt": start_dt,
-                    "edt": end_dt,
+                    "sdt": datetime.datetime.fromtimestamp(start_dt).isoformat(),
+                    "edt": datetime.datetime.fromtimestamp(end_dt).isoformat(),
                     "sp": start_page,
                     "ep": end_page
                 },

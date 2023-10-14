@@ -16,9 +16,19 @@ Configure using a `.env` file with the following values specified:
 # - clear_staging : Delete staging tables
 STEPS = staging tables download_books link_books make_users supplemental clear_staging
 
-# Database Options (currently with sqlite)
+# Database Options
 
-DB_FILE = main.db # DB File
+DB_IP = 127.0.0.1 # Database IP
+DB_PORT = 5432 # Database port
+DB_USER = <username> # Database user
+DB_PASSWORD = <password> # Database password
+DB_DATABASE = <database> # Database name
+
+DB_TUNNEL = true # Use SSH tunnel (true | false)
+DB_TUNNEL_ADDR = starbug.cs.rit.edu # SSH tunnel address
+DB_TUNNEL_PORT = 22 # SSH tunnel port
+DB_TUNNEL_USERNAME = <username> # SSH tunnel username
+DB_TUNNEL_PASSWORD = <password> # SSH tunnel password
 
 # Database Setup
 DB_CLEAR = true # Clear database before run (true/false)

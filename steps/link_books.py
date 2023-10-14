@@ -6,8 +6,8 @@ import random
 
 def store_audiences(context: GeneratorContext):
     print("\tStoring audiences in DB...")
-    context.db.executemany(
-        "INSERT INTO " + context.table("audiences") + " (id, name) VALUES (:id, :name)",
+    context.db.cursor().executemany(
+        "INSERT INTO " + context.table("audiences") + " (id, name) VALUES (%(id)s, %(name)s)",
         [
             {"id": context.options["audiences"].index(a), "name": a}
             for a in context.options["audiences"]
@@ -25,9 +25,9 @@ def link_audiences(context: GeneratorContext):
         to_select = to_select[: random.randint(1, context.options["max_audiences"])]
         for audience in to_select:
             context.execute_cached(
-                "INSERT OR IGNORE INTO "
+                "INSERT INTO "
                 + context.table("books.audiences")
-                + " (book_id, audience_id) VALUES (:bid, :aid)",
+                + " (book_id, audience_id) VALUES (:bid, :aid) ON CONFLICT DO NOTHING",
                 {"bid": book_id, "aid": context.options["audiences"].index(audience)},
             )
 
@@ -39,14 +39,14 @@ def link_books_main(context: GeneratorContext):
 
     print("\tLinking authors...")
     context.db.execute(
-        "INSERT INTO {books_authors} (book_id, contributor_id) SELECT book_id, mapped from (SELECT * FROM staging_books_authors_mapping INNER JOIN staging_id_mapping ON author_raw=original)".format(
+        "INSERT INTO {books_authors} (book_id, contributor_id) SELECT book_id, mapped from (SELECT * FROM staging_books_authors_mapping INNER JOIN staging_id_mapping ON author_raw=original) as superquery".format(
             books_authors=context.table("books.authors")
         )
     )
 
     print("\tLinking editors...")
     context.db.execute(
-        "INSERT INTO {books_editors} (book_id, contributor_id) SELECT book_id, mapped from (SELECT * FROM staging_books_authors_mapping INNER JOIN staging_id_mapping ON author_raw=original) WHERE MOD(mapped, 5) = 0".format(
+        "INSERT INTO {books_editors} (book_id, contributor_id) SELECT book_id, mapped from (SELECT * FROM staging_books_authors_mapping INNER JOIN staging_id_mapping ON author_raw=original) as superquery WHERE MOD(mapped, 5) = 0".format(
             books_editors=context.table("books.editors")
         )
     )
@@ -64,3 +64,4 @@ def link_books_main(context: GeneratorContext):
             contributors=context.table("contributors")
         )
     )
+    context.db.commit()
