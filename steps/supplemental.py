@@ -53,15 +53,49 @@ def build_collections(context: GeneratorContext):
 
     context.clean_cache()
 
+
 def make_friends(context: GeneratorContext):
     for follower in track(range(context.ids["users"]), "\tMaking friends..."):
-        to_follow = list(set([random.randint(0, context.ids["users"]) for _ in range(random.randint(1, context.options["max_following"]))]))
+        to_follow = list(
+            set(
+                [
+                    random.randint(0, context.ids["users"])
+                    for _ in range(random.randint(1, context.options["max_following"]))
+                ]
+            )
+        )
         for followee in to_follow:
             if followee != follower:
-                context.execute_cached("INSERT INTO " + context.table("users.following") + " (user_id, following_id) VALUES (:uid, :fid)", {
-                    "uid": follower,
-                    "fid": followee
-                })
+                context.execute_cached(
+                    "INSERT INTO "
+                    + context.table("users.following")
+                    + " (user_id, following_id) VALUES (:uid, :fid)",
+                    {"uid": follower, "fid": followee},
+                )
+    context.clean_cache()
+
+
+def rate_books(context: GeneratorContext):
+    for book in track(range(context.ids["editions"]), "\tRating books..."):
+        users = list(
+            set(
+                [
+                    random.randint(0, context.ids["users"])
+                    for i in range(random.randint(0, context.options["max_ratings"]))
+                ]
+            )
+        )
+        for user_id in users:
+            context.execute_cached(
+                "INSERT INTO "
+                + context.table("users.ratings")
+                + " (book_id, user_id, rating) VALUES (:bid, :uid, :rating)",
+                {
+                    "bid": book,
+                    "uid": user_id,
+                    "rating": random.randint(0, 5)
+                },
+            )
     context.clean_cache()
 
 
@@ -69,3 +103,4 @@ def supplemental_main(context: GeneratorContext):
     print("[green][bold]STEP: [/bold] Performing supplemental tasks...[/green]")
     build_collections(context)
     make_friends(context)
+    rate_books(context)
