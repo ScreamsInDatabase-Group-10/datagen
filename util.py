@@ -84,7 +84,7 @@ class GeneratorContext:
         self.db = self._open_database()
         self.ids: dict[str, int] = {}
         self.exec_cache: dict[str, list[dict]] = {}
-        self.atomics = {"genre": {}, "publisher": {}}
+        self.atomics = {"genre": {}, "publisher": {}, "pages": {}}
 
     def _open_database(self) -> Connection:
         conn = connect(self.options["db_file"])

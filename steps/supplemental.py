@@ -3,6 +3,7 @@ from rich import print
 from rich.progress import track
 import random
 from markov_word_generator import MarkovWordGenerator
+import time
 
 
 def build_collections(context: GeneratorContext):
@@ -90,10 +91,45 @@ def rate_books(context: GeneratorContext):
                 "INSERT INTO "
                 + context.table("users.ratings")
                 + " (book_id, user_id, rating) VALUES (:bid, :uid, :rating)",
+                {"bid": book, "uid": user_id, "rating": random.randint(0, 5)},
+            )
+    context.clean_cache()
+
+
+def read_books(context: GeneratorContext):
+    for user_id in track(range(context.ids["users"]), "\tAcquiring an education..."):
+        to_read = list(
+            set(
+                [
+                    random.randint(0, context.ids["editions"])
+                    for i in range(random.randint(0, context.options["max_sessions"]))
+                ]
+            )
+        )
+
+        for book in to_read:
+            start_dt = random.randint(
+                0, int(time.time() - context.options["max_session_time"] * 3600)
+            )
+            end_dt = start_dt + random.randint(
+                (context.options["max_session_time"] * 3600) // 100,
+                context.options["max_session_time"] * 3600,
+            )
+            start_page = random.randint(0, context.atomics["pages"][book])
+            end_page = random.randint(start_page, context.atomics["pages"][book])
+            session_id = context.id("sessions")
+            context.execute_cached(
+                "INSERT OR IGNORE INTO "
+                + context.table("users.sessions")
+                + " (session_id, book_id, user_id, start_datetime, end_datetime, start_page, end_page) VALUES (:sid, :bid, :uid, :sdt, :edt, :sp, :ep)",
                 {
+                    "sid": session_id,
                     "bid": book,
                     "uid": user_id,
-                    "rating": random.randint(0, 5)
+                    "sdt": start_dt,
+                    "edt": end_dt,
+                    "sp": start_page,
+                    "ep": end_page
                 },
             )
     context.clean_cache()
@@ -104,3 +140,4 @@ def supplemental_main(context: GeneratorContext):
     build_collections(context)
     make_friends(context)
     rate_books(context)
+    read_books(context)

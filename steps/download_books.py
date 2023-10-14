@@ -195,6 +195,8 @@ def store_edition(
     )
     context.create_mapped("editions", id, mapped_id)
 
+    context.atomics["pages"][mapped_id] = trimmed["number_of_pages"]
+
     for g in trimmed.get("genres", []):
         normal = g.lower().replace("-", "").replace(".", "")
         if not normal in context.atomics["genre"].keys():
