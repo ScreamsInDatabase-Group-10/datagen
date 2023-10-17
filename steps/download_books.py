@@ -21,14 +21,13 @@ import time
 import datetime
 
 EDITION_REQUIRED_KEYS = [
-    "edition_name",
     "title",
     "number_of_pages",
     "publish_date",
     "authors",
     "isbn_13",
 ]
-EDITION_OPTIONAL_KEYS = ["publishers", "genres"]
+EDITION_OPTIONAL_KEYS = ["publishers", "genres", "edition_name"]
 
 AUTHOR_REQUIRED_KEYS = ["name"]
 
@@ -163,6 +162,9 @@ def store_edition(
     if len(trimmed["isbn_13"]) == 0:
         return False
 
+    if trimmed["number_of_pages"] < 1:
+        return False
+
     if any([not i in string.digits for i in trimmed["isbn_13"][0]]):
         return False
 
@@ -190,7 +192,7 @@ def store_edition(
             id=mapped_id,
             title=trimmed["title"].replace("'", "\\'"),
             length=trimmed["number_of_pages"],
-            edition=trimmed["edition_name"],
+            edition=trimmed.get("edition_name", None),
             release_dt=datetime.datetime.fromtimestamp(parsed_dt).isoformat(),
             isbn=int(trimmed["isbn_13"][0]),
         ),

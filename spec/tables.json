@@ -6,7 +6,7 @@
       "id bigint",
       "title text not null",
       "length bigint check (length > 0) not null",
-      "edition text not null",
+      "edition text",
       "release_dt timestamp not null",
       "isbn bigint unique not null"
     ],
