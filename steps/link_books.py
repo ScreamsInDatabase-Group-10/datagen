@@ -45,7 +45,6 @@ def link_books_main(context: GeneratorContext):
             books_authors=context.table("books.authors")
         )
     )
-    context.db.commit()
 
     print("\tLinking editors...")
     context.db.execute(
@@ -53,15 +52,13 @@ def link_books_main(context: GeneratorContext):
             books_editors=context.table("books.editors")
         )
     )
-    context.db.commit()
-    """
+    
     print("\tTrimming books...")
     context.db.execute(
         "DELETE FROM {books} WHERE id NOT IN (SELECT book_id FROM books_authors)".format(
             books=context.table("books")
         )
     )
-    context.db.commit()
 
     print("\tTrimming contributors...")
     context.db.execute(
@@ -69,4 +66,4 @@ def link_books_main(context: GeneratorContext):
             contributors=context.table("contributors")
         )
     )
-    context.db.commit()"""
+    context.db.commit()

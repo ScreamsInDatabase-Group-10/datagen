@@ -26,8 +26,9 @@ EDITION_REQUIRED_KEYS = [
     "publish_date",
     "authors",
     "isbn_13",
+    "edition_name"
 ]
-EDITION_OPTIONAL_KEYS = ["publishers", "genres", "edition_name"]
+EDITION_OPTIONAL_KEYS = ["publishers", "genres"]
 
 AUTHOR_REQUIRED_KEYS = ["name"]
 
@@ -192,7 +193,7 @@ def store_edition(
             id=mapped_id,
             title=trimmed["title"].replace("'", "\\'"),
             length=trimmed["number_of_pages"],
-            edition=trimmed.get("edition_name", None),
+            edition=trimmed["edition_name"],
             release_dt=datetime.datetime.fromtimestamp(parsed_dt).isoformat(),
             isbn=int(trimmed["isbn_13"][0]),
         ),
