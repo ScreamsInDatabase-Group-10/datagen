@@ -38,6 +38,9 @@ class OptionsDict(TypedDict):
     max_following: int
     audiences: list[str]
     max_audiences: int
+    rand_start: int
+    rand_end: int
+    rand_count: int
 
 
 REFERENCE_NAMES = Literal[
@@ -100,6 +103,8 @@ class GeneratorContext:
             "max_following": int(getenv("MAX_FOLLOWING", "100")),
             "audiences": [i.strip() for i in getenv("AUDIENCES", "").split(",")],
             "max_audiences": int(getenv("MAX_AUDIENCES", "3")),
+            "rand_start": int(environ["START_DELTA"]),
+            "rand_end": int(environ["GENERATE"]),
         }
         self.db = self._open_database()
         self.ids: dict[str, int] = {}
@@ -112,25 +117,29 @@ class GeneratorContext:
                 (self.options["db_tunnel_addr"], self.options["db_tunnel_port"]),
                 ssh_username=self.options["db_tunnel_username"],
                 ssh_password=self.options["db_tunnel_password"],
-                remote_bind_address=(self.options["db_ip"], self.options["db_port"])
+                remote_bind_address=(self.options["db_ip"], self.options["db_port"]),
             )
             self.tunnel.start()
-            conn = psycopg.connect(**{
-                "dbname": self.options["db_database"],
-                "user": self.options["db_user"],
-                "password": self.options["db_password"],
-                "host": self.tunnel.local_bind_host,
-                "port": self.tunnel.local_bind_port
-            })
+            conn = psycopg.connect(
+                **{
+                    "dbname": self.options["db_database"],
+                    "user": self.options["db_user"],
+                    "password": self.options["db_password"],
+                    "host": self.tunnel.local_bind_host,
+                    "port": self.tunnel.local_bind_port,
+                }
+            )
         else:
             self.tunnel = None
-            conn = psycopg.connect(**{
-                "dbname": self.options["db_database"],
-                "user": self.options["db_user"],
-                "password": self.options["db_password"],
-                "host": self.options["db_ip"],
-                "port": self.options["db_port"]
-            })
+            conn = psycopg.connect(
+                **{
+                    "dbname": self.options["db_database"],
+                    "user": self.options["db_user"],
+                    "password": self.options["db_password"],
+                    "host": self.options["db_ip"],
+                    "port": self.options["db_port"],
+                }
+            )
         if "staging" in self.options["steps"]:
             conn.execute("DROP TABLE IF EXISTS staging_id_mapping;")
             conn.execute(
@@ -164,9 +173,8 @@ class GeneratorContext:
         if not "staging" in self.options["steps"]:
             return
         self.execute_cached(
-            "INSERT INTO staging_id_mapping (original, mapped) VALUES (:original, :mapped)", dict(
-                original=original_id, mapped=mapped_id
-            )
+            "INSERT INTO staging_id_mapping (original, mapped) VALUES (:original, :mapped)",
+            dict(original=original_id, mapped=mapped_id),
         )
 
     def table(self, ref: REFERENCE_NAMES) -> str:

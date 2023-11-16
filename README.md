@@ -56,6 +56,11 @@ MAX_SESSION_TIME = 10 # Max session time in hours
 MAX_FOLLOWING = 100 # Max amount of other users a user can follow
 MAX_AUDIENCES = 3 # Max number of audiences/book
 AUDIENCES = young adult, adult, children, education, government, reference # Comma-separated list of audience names
+
+# Random Generation
+START_DELTA = 31536000
+END_DELTA = 31536000
+GENERATE = 250
 ```
 
 ### Table Specification
