@@ -5,6 +5,7 @@ from typing import Union, Literal, Any
 from sshtunnel import SSHTunnelForwarder
 import psycopg
 import re
+from markov_word_generator import MarkovWordGenerator
 
 
 class OptionsDict(TypedDict):
@@ -104,7 +105,8 @@ class GeneratorContext:
             "audiences": [i.strip() for i in getenv("AUDIENCES", "").split(",")],
             "max_audiences": int(getenv("MAX_AUDIENCES", "3")),
             "rand_start": int(environ["START_DELTA"]),
-            "rand_end": int(environ["GENERATE"]),
+            "rand_end": int(environ["END_DELTA"]),
+            "rand_count": int(environ["GENERATE"]),
         }
         self.db = self._open_database()
         self.ids: dict[str, int] = {}
@@ -212,4 +214,14 @@ class GeneratorContext:
         self.execute_cached(
             "INSERT INTO staging_books_authors_mapping (book_id, author_raw) VALUES (:book, :author) ON CONFLICT DO NOTHING",
             {"book": book, "author": author},
+        )
+
+    def get_markov(
+        self, type: Literal["names", "words"], length: int
+    ) -> MarkovWordGenerator:
+        return MarkovWordGenerator(
+            length,
+            self.options["names_dict"]
+            if type == "names"
+            else self.options["words_dict"],
         )
